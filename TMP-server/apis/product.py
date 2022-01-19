@@ -1,7 +1,7 @@
 # -*- coding:utf-8 -*-
  
 from flask import Blueprint
- 
+
 app_product = Blueprint("app_product", __name__)
 
 @app_product.route("/api/product/list",methods=['GET'])
