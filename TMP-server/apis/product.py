@@ -1,19 +1,33 @@
 # -*- coding:utf-8 -*-
  
 from flask import Blueprint
+from pymysql import cursors
+import pymysql
 
 app_product = Blueprint("app_product", __name__)
 
+# 使用用户名密码创建数据库链接
+# PyMySQL使用文档  https://pymysql.readthedocs.io
+connection = pymysql.connect(host='localhost',   # 数据库IP地址或链接域名
+                             user='root',     # 设置的具有增改查权限的用户
+                             password='root', # 用户对应的密码
+                             database='TPMStore',# 数据表
+                             charset='utf8mb4',  # 字符编码
+                             cursorclass=pymysql.cursors.DictCursor) # 结果作为字典返回游标
+
+
 @app_product.route("/api/product/list",methods=['GET'])
 def product_list():
-    # 硬编码返回list
-    data = [
-        {"id":1, "keyCode":"R2021", "title":"源代码安全漏洞挖掘与分析系统软件", "type":"军方项目", "tester":"陈俊亦","seller":"高才栋","step":"等待报告评审","customer":"电信十所","begintime":"2020年5月8日","update":"2020-04-06"},
-        {"id":2, "keyCode":"R2113", "title":"WXT星敏触发处理主控软件", "type":"航天项目", "tester":"陈俊亦","seller":"高才栋","step":"静态审查结束","customer":"空间中心","begintime":"2021年7月19日","update":"2021-01-06"},
-    ]
-    # 按返回模版格式进行json结果返回
+    # 使用python的with..as控制流语句（相当于简化的try except finally）
+    with connection.cursor() as cursor:
+        #查询产品信息表-按更新时间新旧排序
+        sql = "SELECT * FROM `products` ORDER BY `Update` DESC"
+        cursor.execute(sql)
+        data = cursor.fetchall()
+
+    #按返回模式格式进行json结果返回
     resp_data = {
-        "code": 20000,
-        "data": data
+        "code":20000,
+        "data":data
     }
     return resp_data
