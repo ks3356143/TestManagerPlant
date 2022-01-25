@@ -6,3 +6,11 @@ export function apiProductList() {
       method: 'get',
     })
   }
+
+export function apiProductCreate(requstBody){
+  return request({
+    url:"/api/product/create",
+    method:"post",
+    data:requstBody //这里是一个Json格式
+  })
+}

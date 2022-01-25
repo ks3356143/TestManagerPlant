@@ -47,11 +47,25 @@ def product_create():
         "data":[]
     }
 
-    #获取请求传递的json
+    # 获取请求传递json body
     body = request.get_data()
     body = json.loads(body)
 
     #先做个判断看keyCode是否重复
-    with connection.cursor() as cursor:
-        select = "SELECT * FROM `products` WHERE `keyCode` = %s"
-        cursor.execute(select,(body['keyCode']),)
+    with connection:
+        with connection.cursor() as cursor:
+            select = "SELECT * FROM `products` WHERE `keyCode` = %s"
+            cursor.execute(select,(body['keyCode']),)
+            result = cursor.fetchall()
+
+        if len(result) > 0:
+            resp_data['code'] = 200001
+            resp_data['message'] = f"唯一项目代号{body['keyCode']}已经存在"
+            return resp_data
+
+        with connection.cursor() as cursor:
+            sql = "INSERT INTO `products` (`type`,`keyCode`,`title`,`tester`,`step`,`customer`,`seller`) VALUES (%s,%s,%s,%s,%s,%s,%s)"
+            cursor.execute(sql,(body['type'],body['keyCode'],body['title'],body['tester'],body['step'],body['customer'],body['seller']))
+            connection.commit()
+        return resp_data
+
