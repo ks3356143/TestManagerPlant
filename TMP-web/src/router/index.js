@@ -30,14 +30,21 @@ export const constantRoutes = [
     }]
   },
   {
-    path:'/product',
+    path:'/settings',
     component:Layout,
-    redirect:"/product",
+    redirect:"/settings",
+    meta:{title:"项目管理",icon:"el-icon-cpu"},
     children:[{
       path:'product',
       name:'Product',
       component:()=>import('@/views/product/product'),
-      meta:{title:"项目管理",icon:"productmanager"}
+      meta:{title:"项目管理",icon:'el-icon-menu'}
+    },
+    {
+      path:'apps',
+      name:'apps',
+      component:()=>import('@/views/product/apps'),
+      meta:{title:"配置项/系统测试",icon:'el-icon-s-unfold'}
     }]
   },
 

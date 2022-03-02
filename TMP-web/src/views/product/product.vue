@@ -1,7 +1,21 @@
 <template>
   <div class="app-container">
-    <el-dialog title="添加项目" :visible.sync="dialogProductShow">
+    <el-dialog
+      :title="dialogProductStatus === 'ADD' ? '新增项目' : '修改项目基本信息'"
+      :visible.sync="dialogProductShow"
+    >
       <el-form :model="product">
+        <el-form-item
+          v-if="dialogProductStatus === 'UPDATE'"
+          label="编号"
+          label-width="100px"
+        >
+          <el-input
+            v-model="product.id"
+            placeholder="项目顺序编号"
+            style="width: 90%"
+          ></el-input>
+        </el-form-item>
         <el-form-item label="项目类型" label-width="100px">
           <el-input
             v-model="product.type"
@@ -54,10 +68,39 @@
       </el-form>
       <span slot="footer" class="dialog-footer">
         <el-button @click="dialogProductShow = false">取消</el-button>
-        <el-button type="primary" @click="pCreate()">确定</el-button>
+        <el-button v-if="dialogProductStatus === 'ADD'" type="primary" @click="pCreate()"
+          >确定</el-button
+        >
+        <el-button
+          v-if="dialogProductStatus === 'UPDATE'"
+          type="primary"
+          @click="pUpdate()"
+          >修改</el-button
+        >
       </span>
     </el-dialog>
     <div class="filter-container">
+      <el-form :inline="true" :model="search">
+        <el-form-item label="名称">
+          <el-input
+            v-model="search.title"
+            placeholder="支持模糊查询"
+            style="width: 200px"
+            clearable
+          />
+        </el-form-item>
+        <el-form-item label="项目编号">
+          <el-input
+            v-model="search.keyCode"
+            placeholder="支持模糊查询"
+            style="width: 200px"
+            clearable
+          />
+        </el-form-item>
+        <el-form-item label="项目编号">
+          <el-button type="primary" plain @click="searchProduct()">查询</el-button>
+        </el-form-item>
+      </el-form>
       <el-button
         type="primary"
         icon="el-icon-plus"
@@ -66,7 +109,12 @@
         >新增项目</el-button
       >
     </div>
-    <el-table :data="tableData">
+    <el-table
+      :data="tableData"
+      border
+      :header-cell-style="{ 'text-align': 'center' }"
+      :cell-style="{ 'text-align': 'center' }"
+    >
       <el-table-column prop="id" label="编号" />
       <el-table-column prop="type" label="项目类型" />
       <el-table-column prop="keyCode" label="唯一标识" />
@@ -75,20 +123,49 @@
       <el-table-column prop="step" label="阶段" />
       <el-table-column prop="customer" label="客户单位" />
       <el-table-column prop="seller" label="销售人员" />
-      <el-table-column prop="update" label="更新时间" show-overflow-tooltip="" />
-      <el-table-column prop="begintime" label="开始时间" show-overflow-tooltip="" />
+      <el-table-column
+        prop="update"
+        label="更新时间"
+        show-overflow-tooltip=""
+        :formatter="formatDate"
+      />
+      <el-table-column
+        prop="begintime"
+        label="开始时间"
+        show-overflow-tooltip=""
+        :formatter="formatDate"
+      />
+      <el-table-column label="操作">
+        <template slot-scope="scope">
+          <el-link icon="el-icon-edit" @click="dialogProductUpdate(scope.row)"
+            >编辑</el-link
+          >
+          <el-link icon="el-icon-delete" @click="pSoftRemove(scope.row.id)">停用</el-link>
+          <el-link icon="el-icon-delete" @click="pHardRemove(scope.row.id)">删除</el-link>
+        </template>
+      </el-table-column>
     </el-table>
   </div>
 </template>
 
 <script>
-import { apiProductList, apiProductCreate } from "@/api/product";
+import {
+  apiProductList,
+  apiProductCreate,
+  apiProductUpdate,
+  apiProductDelete,
+  apiProductRemove,
+  apiProductSearch,
+} from "@/api/product";
 import store from "@/store";
+import moment from "moment";
 export default {
   name: "Product", // 页面名称
   // data() 数据\属性，固定return中配置
   data() {
     return {
+      //定义修改添加状态
+      dialogProductStatus: "ADD",
       tableData: [],
       //定义项目添加数据
       op_user: store.getters.name,
@@ -105,6 +182,11 @@ export default {
       },
       //定义控制嵌套表单显示与取消
       dialogProductShow: false,
+      //定义模糊搜索数据
+      search: {
+        title: undefined,
+        keyCode: undefined,
+      },
     };
   },
   // 页面生命周期中的创建阶段调用
@@ -137,19 +219,108 @@ export default {
         //弹窗变量显示设置为true
         (this.dialogProductShow = true);
       console.log("点击了新增项目按钮");
+      //设置dialog为ADD
+      this.dialogProductStatus = "ADD";
     },
     pCreate() {
+      //实现弹窗添加按钮
       apiProductCreate(this.product).then((response) => {
         this.$notify({
           title: "成功",
           type: "success",
           message: "成功添加项目一个",
         });
+        this.getProductList(); //刷新
       });
       //将对话框关闭
       this.dialogProductShow = false;
-      //刷新下项目列表
-      this.getProductList();
+    },
+    dialogProductUpdate(row) {
+      //初始化空状态
+      (this.product.id = row.id),
+        (this.product.type = row.type),
+        (this.product.keyCode = row.keyCode),
+        (this.product.title = row.title),
+        (this.product.tester = row.tester),
+        (this.product.step = row.step),
+        (this.product.customer = row.customer),
+        (this.product.seller = row.seller),
+        //弹窗变量显示设置为true
+        (this.dialogProductShow = true);
+      //标记弹窗为UPDATE
+      this.dialogProductStatus = "UPDATE";
+      console.log("点击了修改项目信息按钮");
+    },
+    pUpdate() {
+      apiProductUpdate(this.product).then((res) => {
+        this.$notify({
+          title: "成功",
+          message: "项目修改成功",
+          type: "success",
+        });
+        //关闭dialog
+        this.dialogProductShow = false;
+        //重新查询显示
+        this.getProductList();
+      });
+    },
+    pHardRemove(id) {
+      this.$confirm("此操作将永久删除项目，请注意", "提示", {
+        confirmButtonText: "确定",
+        cancelButtonText: "取消",
+        type: "warning",
+      }).then(() => {
+        apiProductDelete(id)
+          .then((res) => {
+            this.$message({
+              type: "success",
+              message: "删除成功",
+            });
+            this.getProductList(); //刷新
+          })
+          .catch(() => {
+            this.$message({
+              type: "info",
+              message: "已取消删除",
+            });
+          });
+      });
+    },
+    pSoftRemove(id) {
+      this.$confirm("此操作将停用不显示, 是否继续?", "提示", {
+        confirmButtonText: "确定",
+        cancelButtonText: "取消",
+        type: "warning",
+      })
+        .then(() => {
+          apiProductRemove(id).then((res) => {
+            this.$message({
+              type: "success",
+              message: "删除成功!",
+            });
+            // 重新查询刷新数据显示
+            this.getProductList();
+          });
+        })
+        .catch(() => {
+          this.$message({
+            type: "info",
+            message: "已取消删除",
+          });
+        });
+    },
+    searchProduct() {
+      apiProductSearch(this.search).then((res) => {
+        this.tableData = res.data;
+      });
+    },
+    formatDate(row, column) {
+      const date = row[column.property];
+      if (date === undefined) {
+        return "";
+      }
+      // 使用moment格式化时间，由于我的数据库是默认时区，偏移量设置0，各自根据情况进行配置
+      return moment(date).utcOffset(0).format("YYYY-MM-DD HH:mm");
     },
   },
 };
