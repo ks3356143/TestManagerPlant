@@ -1,5 +1,63 @@
 <template>
   <div class="app-container">
+    <el-drawer
+      :title="appAction === 'ADD' ? '添加' : '修改'"
+      :visible.sync="drawerVisible"
+      size="45%"
+      direction="rtl"
+    >
+      <div>
+        <el-form :model="appInfo" :rules="rules" ref="appInfo" label-width="120px">
+          <el-form-item label="测试名称" prop="name">
+            <el-input
+              v-model="appInfo.name"
+              :disabled="appAction === 'ADD' ? false : true"
+              style="width: 300px"
+            />
+          </el-form-item>
+          <el-form-item label="归属分类" prop="productId">
+            <el-select v-model="appInfo.productId" style="width: 300px">
+              <el-option
+                v-for="item in options"
+                :key="item.id"
+                :label="item.title"
+                :value="item.id"
+              >
+                <span style="float: left">{{ item.keyCode }}</span>
+                <span style="float: right; color: #8492a6; font-size: 13px">{{
+                  item.title
+                }}</span>
+              </el-option>
+            </el-select>
+          </el-form-item>
+          <el-form-item label="应用描述">
+            <el-input v-model="appInfo.note" style="width: 300px" />
+          </el-form-item>
+          <el-form-item label="测试级别" prop="level">
+            <el-input v-model="appInfo.level" style="width: 300px" />
+          </el-form-item>
+          <el-form-item label="‘新研’/‘改造’" prop="junstatus">
+            <el-input v-model="appInfo.junstatus" style="width: 300px" />
+          </el-form-item>
+          <el-form-item label="输入负责人" prop="producer">
+            <el-input v-model="appInfo.producer" style="width: 300px" />
+          </el-form-item>
+          <el-form-item label="请输入创建人">
+            <el-input v-model="appInfo.creteUser" style="width: 300px" />
+          </el-form-item>
+          <el-form-item label="请输入更新人">
+            <el-input v-model="appInfo.updateUser" style="width: 300px" />
+          </el-form-item>
+          <el-form-item>
+            <span class="dialog-footer">
+              <el-button @click="drawerVisible = false">取 消</el-button>
+              <el-button type="primary" @click="commitApp('appInfo')">提 交</el-button>
+            </span>
+          </el-form-item>
+        </el-form>
+      </div>
+    </el-drawer>
+
     <div class="filter-container">
       <el-form :inline="true" :model="search">
         <el-form-item label="归属项目">
@@ -76,7 +134,7 @@
     >
       <!--:data prop绑定{}中的key，label为自定义显示的列表头-->
       <el-table-column prop="productId" label="归属项目的ID" />
-      <el-table-column prop="name" label="系统/配置项名称" />
+      <el-table-column prop="name" label="系统/配置项" />
       <el-table-column prop="title" label="归属分类" />
       <el-table-column prop="note" label="被测描述" />
       <el-table-column prop="level" label="被测件级别" />
@@ -108,12 +166,40 @@
 
 <script>
 import moment from "moment";
-import { apiAppsProduct, apiAppsSearch } from "@/api/apps";
+import { apiAppsProduct, apiAppsSearch, apiAppsCommit } from "@/api/apps";
+import store from "@/store";
 
 export default {
   name: "Apps",
   data() {
     return {
+      //获得登录人名字
+      op_user: store.getters.name,
+      //定义修改或新增动作
+      appAction: "ADD",
+      //控制抽屉显示与否
+      drawerVisible: false,
+      //添加或修改配置项系统object
+      appInfo: {
+        id: "",
+        name: "",
+        productId: "",
+        note: "",
+        level: "",
+        junstatus: "",
+        producer: "",
+        creteUser: "",
+        updateUser: "",
+      },
+      //规则定义非空
+      rules: {
+        name: [{ required: true, message: "请输入配置项或系统名称", trigger: "blur" }],
+        productId: [{ required: true, message: "请确认所属项目", trigger: "blur" }],
+        level: [{ required: true, message: "请选择配置项还是系统", trigger: "blur" }],
+        junstatus: [{ required: true, message: "请选择是新研还是改造", trigger: "blur" }],
+        producer: [{ required: true, message: "请填写负责人名称", trigger: "blur" }],
+      },
+
       search: {
         productId: "",
         name: "",
@@ -166,16 +252,62 @@ export default {
       this.searchClick();
     },
     addApp() {
-      this.$message({
-        message: "我是待实现的CASE",
-        type: "warning",
-      });
+      // 定义动作，以抽屉做判断
+      this.appAction = "ADD";
+      //添加数据初始化
+      this.appInfo.name = "";
+      this.appInfo.productId = "";
+      this.appInfo.note = "";
+      this.appInfo.level = "";
+      this.appInfo.junstatus = "";
+      this.appInfo.producer = "";
+      this.appInfo.creteUser = this.op_user;
+      this.appInfo.updateUser = this.op_user;
+      //初始化完成后显示抽屉
+      this.drawerVisible = true;
+      //如果有遗留则验证清空
+      // this.$nextTick(() => {
+      //   this.$refs["appInfo"].resetFields();
+      // });
     },
-    updateApp() {
-      this.$message({
-        message: "我是待实现的CASE",
-        type: "warning",
+    updateApp(row) {
+      this.appAction = "UPDATE";
+      this.drawerVisible = true;
+      this.appInfo.id = row.id;
+      this.appInfo.name = row.name;
+      this.appInfo.productId = row.productId;
+      this.appInfo.note = row.note;
+      this.appInfo.level = row.level;
+      this.appInfo.junstatus = row.junstatus;
+      this.appInfo.producer = row.producer;
+      this.appInfo.creteUser = "";
+      this.appInfo.updateUser = this.op_user;
+    },
+    commitApp() {
+      //上面form定义ref，前端验证通过代码如下
+      this.$refs["appInfo"].validate((valid) => {
+        if (valid) {
+          this.appInfo.updateUser = this.op_user;
+          apiAppsCommit(this.appInfo).then((response) => {
+            // 如果request.js没有拦截即表示成功，给出对应提示和操作
+            this.$notify({
+              title: "成功",
+              message: this.appAction === "ADD" ? "应用添加成功" : "应用修改成功",
+              type: "success",
+            });
+            // 关闭对话框
+            this.drawerVisible = false;
+            // 重新查询刷新数据显示
+            this.productList();
+          });
+        } else {
+          return false;
+        }
       });
+      //关闭抽屉
+      this.drawerVisible = false;
+      //重新查询应用
+      this.productList();
     },
   },
 };

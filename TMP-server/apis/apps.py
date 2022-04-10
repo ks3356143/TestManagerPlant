@@ -3,7 +3,7 @@ from flask import Blueprint
 from flask import request
 from dbutils.pooled_db import PooledDB
 from config import config
-from config.format import resp_format_success
+from config.format import resp_format_success,resp_format_failed
 import json
 import pymysql.cursors
 
@@ -74,3 +74,57 @@ def searchBykey():
     response['data'] = data
     response['total'] = num
     return response
+
+@app_application.route("/api/application/update",methods=['POST'])
+def product_update():
+    body = request.get_data()
+    body = json.loads(body)
+    resp_success = resp_format_success
+    resp_failed = resp_format_failed
+    #由于是选填ID不用判断必填id，下面是判断必填参数
+    if 'name' not in body:
+        resp_format_failed.message = "名称不能为空"
+        return resp_format_failed
+    elif 'productId' not in body:
+        resp_format_failed.message = "所属项目不能为空"
+        return resp_format_failed
+    elif 'level' not in body:
+        resp_format_failed.message = "项目等级不能为空"
+        return resp_format_failed
+    elif 'junstatus' not in body:
+        resp_format_failed.message = "软件改造/重用情况为空"
+        return resp_format_failed
+    elif 'producer' not in body:
+        resp_format_failed.message = "产品负责人不能为空"
+        return resp_format_failed
+
+    connection = pool.connection()
+    with connection:
+        #如果传的值有ID，那么进行修改操作，否则新增
+        if 'id' in body and body['id']!='':
+            with connection.cursor() as cursor:
+                #拼接修改语句，由于应用名name不能修改，不需要做重复校验
+                sql = "UPDATE `apps` SET `name`=%s,`productId`=%s,`note`=%s,`level`=%s,`junstatus`=%s,`producer`=%s, \
+                        `creteUser`=%s,`updateUser`=%s,`updateDate`=NOW() WHERE id=%s"
+                cursor.execute(sql,(body['name'],body['productId'],body['note'],body['level'],body['junstatus'],\
+                                    body['producer'],body['creteUser'],body['updateUser'],body['id']))
+                connection.commit()
+        else:
+            #没有传id就走新增流程,先判断是否重复
+            with connection.cursor() as cursor:
+                select = "SELECT * FROM `apps` WHERE `name`=%s"
+                cursor.execute(select,(body['name'],))
+                result = cursor.fetchall()
+            if len(result) > 0:
+                resp_format_failed["code"] = 200001
+                resp_format_failed["message"] = "该配置项名称已存在，请检查"
+                return resp_format_failed
+            with connection.cursor() as cursor:
+                sql = "INSERT INTO `apps` (`name`,`productId`,`note`,`level`,`junstatus`,`producer`,`creteUser`,\
+                      `updateUser`) VALUES(%s,%s,%s,%s,%s,%s,%s,%s)"
+                cursor.execute(sql,(body["name"],body["productId"],body["note"],body["level"],body["junstatus"],\
+                                    body["producer"],body["creteUser"],body["updateUser"]))
+                connection.commit()
+        return resp_format_success
+
+

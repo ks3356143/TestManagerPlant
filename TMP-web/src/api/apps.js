@@ -16,3 +16,12 @@ export function apiAppsProduct() {
     method: 'get'
   })
 }
+
+// 新增/修改配置项/系统列表
+export function apiAppsCommit(requestBody){
+  return request({
+    url:"/api/application/update",
+    method:'post',
+    data:requestBody
+  })
+}
