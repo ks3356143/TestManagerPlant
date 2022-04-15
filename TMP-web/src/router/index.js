@@ -47,13 +47,27 @@ export const constantRoutes = [
       meta:{title:"配置项/系统测试",icon:'el-icon-s-unfold'}
     }]
   },
+  {
+    path: '/tmp',
+    component: Layout,
+    redirect: '/tmp',
+    meta: { title: '测试项和用例', icon: 'el-icon-files' },
+    children: [
+      {
+        path: 'testitem',
+        name: 'testitem',
+        component: () => import('@/views/testitem/index'),
+        meta: { title: '测试项管理', icon: 'el-icon-bank-card' }
+      },
+    ]
+  },
 
   // 404 page must be placed at the end !!!
   { path: '*', redirect: '/404', hidden: true }
 ]
 
 const createRouter = () => new Router({
-  // mode: 'history', // require service support
+  mode: 'history', // require service support
   scrollBehavior: () => ({ y: 0 }),
   routes: constantRoutes
 })

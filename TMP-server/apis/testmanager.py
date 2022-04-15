@@ -14,6 +14,7 @@ test_manager = Blueprint("test_manager",__name__)
 def searchBykey():
     body = request.get_data()
     body = json.loads(body)
+    print(body)
 
     # 基础语句定义
     sql = ""
@@ -23,34 +24,35 @@ def searchBykey():
     currentPage = 1 if 'currentPage' not in body or body['currentPage'] is None else body['currentPage']
 
     # 拼接查询条件
+    if 'productId' in body and body['productId']!='':
+        sql = sql + " AND A.productId LIKE '%{}%'".format(body['productId'])
     if 'appId' in body and body['appId'] != '':
         sql = sql + " AND A.appId LIKE '%{}%'".format(body['appId'])
     if 'tester' in body and body['tester'] != '':
-        sql = sql + " AND R.tester LIKE '%{}%'".format(body['tester'])
-    if 'type' in body and body['developer'] != '':
-        sql = sql + " AND R.developer LIKE '%{}%'".format(body['developer'])
-    if 'status' in body and body['status'] != '':
-        sql = sql + " AND R.status = '{}'".format(body['status'])
+        sql = sql + " AND T.tester LIKE '%{}%'".format(body['tester'])
+    if 'type' in body and body['type'] != '':
+        sql = sql + " AND T.type LIKE '%{}%'".format(body['type'])
+    if 'ident' in body and body['ident'] != '':
+        sql = sql + " AND T.ident = '%{}%'".format(body['ident'])
     if 'pickTime' in body and body['pickTime'] != '':
-        sql = sql + " AND R.createDate >= '{}' and R.createDate <= '{}' ".format(body['pickTime'][0],
+        sql = sql + " AND T.createDate >= '{}' and T.createDate <= '{}' ".format(body['pickTime'][0],
                                                                                  body['pickTime'][1])
 
     #拼接末尾
     sql = sql + " ORDER BY T.createDate DESC LIMIT {},{}".format((currentPage - 1) * pageSize, pageSize)
-    print(sql)
     # 使用连接池链接数据库
     connection = pool.connection()
     with connection:
         #先查询总数
         with connection.cursor() as cursor:
-            cursor.execute('SELECT * FROM testitem as T , apps as A where T.appId = A.id AND R.isDel=0' + sql)
+            cursor.execute('SELECT * FROM testitem as T , apps as A where T.appId = A.id AND T.isDel=0' + sql)
             total = cursor.fetchall()
             num = len(total)
             print('查询总数为',num)
 
         #执行查询
         with connection.cursor() as cursor:
-            cursor.execute("SELECT A.appId , T.* FROM testitem as T , apps as A WHERE T.appId=A.id AND T.isDel=0" + sql)
+            cursor.execute("SELECT A.Id , T.* FROM testitem as T , apps as A WHERE T.appId=A.id AND T.isDel=0" + sql)
             data = cursor.fetchall()
 
         #按照模板返回数据

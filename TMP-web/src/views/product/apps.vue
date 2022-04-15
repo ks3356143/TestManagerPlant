@@ -280,7 +280,7 @@ export default {
       this.appInfo.level = row.level;
       this.appInfo.junstatus = row.junstatus;
       this.appInfo.producer = row.producer;
-      this.appInfo.creteUser = "";
+      this.appInfo.creteUser = this.op_user;
       this.appInfo.updateUser = this.op_user;
     },
     commitApp() {
