@@ -127,4 +127,22 @@ def product_update():
                 connection.commit()
         return resp_format_success
 
-
+#测试项-远程搜索接口-通知支持name和appId的搜索
+@app_application.route("/api/application/options",methods=['GET'])
+def getOptionsForSelected():
+    value = request.args.get('value','')
+    response = resp_format_success
+    connection = pool.connection()
+    with connection.cursor() as cursor:
+        #先按照appId模糊搜索，没有数据按name搜索
+        sqlByAppId = "SELECT * FROM apps WHERE appId LIKE '%{}%'".format(value)
+        cursor.execute(sqlByAppId)
+        dataByAppId = cursor.fetchall()
+        if len(dataByAppId) > 0:
+            response['data'] = dataByAppId
+        else:
+            sqlByName = "SELECT * FROM apps WHERE `name` LIKE '%{}%'".format(value)
+            cursor.execute(sqlByName)
+            dataByName = cursor.fetchall()
+            response['data'] = dataByName
+        return response

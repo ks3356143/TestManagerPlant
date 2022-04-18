@@ -246,8 +246,9 @@ export default {
           return "未知状态";
       }
     },
+    //增加测试项跳转页面并给个action：ADD的参数
     doCommit() {
-      this.$router.push("commit");
+      this.$router.push({ name: "commit", params: { action: "ADD" } });
     },
     handleSizeChange(val) {
       console.log(`每页 ${val} 条`);
