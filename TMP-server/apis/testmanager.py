@@ -116,3 +116,18 @@ def createRequest():
                 resp_failed['message'] = "添加测试项失败" + err
                 return resp_failed
 
+#获取回填数据信息
+@test_manager.route("/api/test/info",methods=['GET'])
+def getTestInfo():
+    test_id = request.args.get('appId')
+    resp_success = format.resp_format_success
+    resp_failed = format.resp_format_failed
+
+    if not test_id:
+        resp_failed['message'] = "测试的appId不能为空"
+        return resp_failed
+    connection = pool.connection()
+    with connection:
+        #查询app表以及testitem表-按时间新旧更新
+        sql = "SELECT "
+
