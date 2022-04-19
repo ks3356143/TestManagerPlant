@@ -59,15 +59,16 @@ export const constantRoutes = [
         component: () => import('@/views/testitem/index'),
         meta: { title: '测试项管理', icon: 'el-icon-bank-card' }
       },
+      {
+        path: 'commit',
+        name:'commit',
+        hidden: true,
+        component:()=>import('@/views/testitem/commit'),
+        meta: { title: '测试项新增修改', icon: 'el-icon-postcard' },
+      },
     ]
   },
-  {
-    path: 'commit',
-    name:'commit',
-    hidden: true,
-    component:()=>import('@/views/testitem/commit'),
-    meta: { title: '测试项新增修改', icon: 'el-icon-postcard' },
-  },
+
 
   // 404 page must be placed at the end !!!
   { path: '*', redirect: '/404', hidden: true }

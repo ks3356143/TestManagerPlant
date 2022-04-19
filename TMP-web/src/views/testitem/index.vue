@@ -87,7 +87,12 @@
       >
     </div>
     <div>
-      <el-table :data="testData">
+      <el-table
+        border
+        :header-cell-style="{ 'text-align': 'center' }"
+        :cell-style="{ 'text-align': 'center' }"
+        :data="testData"
+      >
         <el-table-column prop="appId" label="所属应用ID" />
         <el-table-column prop="title" label="测试项标题" />
         <el-table-column prop="tester" label="测试人" />

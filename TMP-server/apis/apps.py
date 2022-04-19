@@ -131,18 +131,23 @@ def product_update():
 @app_application.route("/api/application/options",methods=['GET'])
 def getOptionsForSelected():
     value = request.args.get('value','')
+    print("搜索的内容为：",value)
     response = resp_format_success
     connection = pool.connection()
     with connection.cursor() as cursor:
         #先按照appId模糊搜索，没有数据按name搜索
-        sqlByAppId = "SELECT * FROM apps WHERE appId LIKE '%{}%'".format(value)
+        sqlByAppId = "SELECT * FROM apps WHERE `id` LIKE '%{}%'".format(value)
         cursor.execute(sqlByAppId)
         dataByAppId = cursor.fetchall()
         if len(dataByAppId) > 0:
             response['data'] = dataByAppId
+            print('进入了搜索appId分支',dataByAppId)
         else:
             sqlByName = "SELECT * FROM apps WHERE `name` LIKE '%{}%'".format(value)
             cursor.execute(sqlByName)
             dataByName = cursor.fetchall()
             response['data'] = dataByName
+            print('进入了搜索app-name分支',dataByName)
+        print('最后返回内容', response['data'])
         return response
+
