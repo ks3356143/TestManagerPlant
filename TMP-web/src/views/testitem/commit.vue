@@ -1,7 +1,11 @@
 <template>
   <div class="app-container">
     <el-header>
-      <el-page-header @back="goBack" content="测试项添加表单"> </el-page-header>
+      <el-page-header
+        @back="goBack"
+        :content="testAction === 'UPDATE' ? '修改测试项' : '新增测试项'"
+      >
+      </el-page-header>
     </el-header>
     <el-main>
       <el-form
@@ -10,6 +14,11 @@
         ref="ruleForm"
         label-width="150px"
       >
+        <el-form-item
+          v-if="testAction === 'UPDATE'"
+          label="测试项ID"
+          prop="id"
+        ></el-form-item>
         <el-form-item label="测试项标题" prop="title">
           <el-input
             v-model="requestForm.title"
@@ -163,7 +172,12 @@
           ></el-input>
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" @click="onSubmit">立即创建</el-button>
+          <el-button v-if="testAction === 'ADD'" type="primary" @click="onSubmit"
+            >立即创建</el-button
+          >
+          <el-button v-if="testAction === 'UPDATE'" type="primary" @click="onSubmit"
+            >点击修改</el-button
+          >
           <el-button @click="onCancel">取消</el-button>
         </el-form-item>
       </el-form>
@@ -173,7 +187,7 @@
 
 <script>
 import { apiAppsIds } from "@/api/apps";
-import { reqCreate } from "@/api/test";
+import { reqCreate, apiTestInfo, apiUpdate } from "@/api/test";
 import store from "@/store";
 export default {
   name: "commit",
@@ -200,6 +214,8 @@ export default {
         caseitem: "",
         passitem: "",
         createUser: store.getters.name,
+        //appName
+        appName: "",
       },
       requestRules: {
         title: [
@@ -336,11 +352,19 @@ export default {
         { label: "低", value: "低" },
       ],
       appIdList: [],
+      testId: "",
     };
   },
   mounted() {
     if (this.$route.params.action) {
       this.testAction = this.$route.params.action;
+    } else if (this.$route.query.action) {
+      this.testAction = this.$route.query.action;
+    }
+    if (this.$route.query.id) {
+      this.testId = this.$route.query.id;
+      //得到ID并进行getTestInfo进行反填
+      this.getTestInfo();
     }
     console.log(this.testAction);
   },
@@ -348,6 +372,33 @@ export default {
     goBack() {
       console.log("点击了返回按钮");
       this.$router.push({ path: "/tmp/testitem" });
+    },
+    getTestInfo() {
+      apiTestInfo(this.testId).then((response) => {
+        const data = response.data;
+        this.requestForm.id = data.id;
+        this.requestForm.title = data.title;
+        this.requestForm.appId = data.appId;
+        this.requestForm.tester = data.tester;
+        this.requestForm.version = data.version;
+        this.requestForm.type = data.type;
+        this.requestForm.name = data.name;
+        this.requestForm.ident = data.ident;
+        this.requestForm.comm = data.comm;
+        this.requestForm.method = data.method;
+        this.requestForm.refe = data.refe;
+        this.requestForm.refhao = data.refhao;
+        this.requestForm.refname = data.refname;
+        this.requestForm.shun = data.shun;
+        this.requestForm.caseitem = data.caseitem;
+        this.requestForm.passitem = data.passitem;
+        this.requestForm.createUser = data.createUser;
+        this.requestForm.appName;
+        this.remoteMethod(data.appName);
+        setTimeout(() => {
+          this.requestForm.appId = data.appId;
+        }, 300);
+      });
     },
     remoteMethod(query) {
       if (query !== "") {
@@ -387,6 +438,16 @@ export default {
               });
               //回到testitem页面
               this.$router.push({ path: "/tmp/testitem", params: { needUp: true } });
+            });
+          } else {
+            apiUpdate(this.requestForm).then((res) => {
+              this.$notify({
+                title: "成功",
+                message: "修改成功",
+                type: "success",
+              });
+              //回到列表界面
+              this.$router.push({ name: "testitem", params: { needUp: "true" } });
             });
           }
         } else {

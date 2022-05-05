@@ -119,15 +119,52 @@ def createRequest():
 #获取回填数据信息
 @test_manager.route("/api/test/info",methods=['GET'])
 def getTestInfo():
-    test_id = request.args.get('appId')
+    test_id =request.args.get('id') #获取前端传入的id
     resp_success = format.resp_format_success
     resp_failed = format.resp_format_failed
 
     if not test_id:
-        resp_failed['message'] = "测试的appId不能为空"
+        resp_failed['message'] = '测试项ID未找到'
         return resp_failed
     connection = pool.connection()
     with connection:
-        #查询app表以及testitem表-按时间新旧更新
-        sql = "SELECT "
+        with connection.cursor() as cursor:
+            #查询测试项列表-按创建时间查询
+            sql="SELECT A.id as appId,A.name as appName,T.id,T.title,T.tester,T.version,T.type,T.name,T.ident,T.comm,T.refe,T.refhao,T.refname,T.method, \
+                T.bind,T.stop,T.shun,T.caseitem,T.passitem,T.status,T.createUser FROM testitem as T,apps as A WHERE T.appId=A.id AND T.isDel=0\
+                 AND T.id={}".format(test_id)
+            cursor.execute(sql)
+            data=cursor.fetchall()
+            if len(data)==1:
+                resp_success['data'] = data[0]
+    return resp_success
 
+@test_manager.route("/api/test/update",methods=['POST'])
+def updateTestitem():
+    body = request.get_data()
+    body = json.loads(body)
+    connection = pool.connection()
+    resp_success = format.resp_format_success
+    #先将历史数据查询出来，用于回填？
+    with connection.cursor() as cursor:
+        sql = "SELECT A.id as appId,A.name as appName,T.id,T.title,T.tester,T.version,T.type,T.name,T.ident,T.comm,T.refe,T.refhao,T.refname,T.method, \
+            T.bind,T.stop,T.shun,T.caseitem,T.passitem,T.status,T.createUser FROM testitem as T,apps as A WHERE T.appId=A.id AND T.isDel=0\
+             AND T.id={}".format(body['id'])
+        cursor.execute(sql)
+        data = cursor.fetchall()
+        if len(data) == 1:
+            old_test_info = data[0]
+        else:
+            print('原有数据查询异常')
+
+        #如果传入有ID值，那么进行修改操作
+        with connection.cursor() as cursor:
+            #拼接修改语句
+            sqlUpdate = "UPDATE testitem SET title=%s,appId=%s,tester=%s,version=%s,`type`=%s,`name`=%s,ident=%s,comm=%s,refe=%s,refhao=%s,refname=%s, \
+                         `method`=%s,shun=%s,caseitem=%s,passitem=%s,createUser=%s,createDate=NOW() WHERE id=%s"
+            cursor.execute(sqlUpdate,(body['title'],body['appId'],body['tester'],body['version'],body['type'],body['name'],body['ident'],\
+                                      body['comm'],body['refe'],body['refhao'],body['refname'],body['method'],body['shun'],\
+                                      body['caseitem'],body['passitem'],body['createUser'],body['id']))
+            #提交执行
+            connection.commit()
+    return resp_success

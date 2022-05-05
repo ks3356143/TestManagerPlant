@@ -103,7 +103,7 @@
         <el-table-column label="操作" width="300">
           <template slot-scope="scope">
             <!--<label>菜单逻辑判断一列</label>-->
-            <el-link type="primary" @click="edittestItem(scope.row)">修改测试项</el-link>
+            <el-link type="primary" @click="doUpdate(scope.row)">修改测试项</el-link>
             <!--<label>菜单逻辑判断二列</label>-->
             <el-divider direction="vertical"></el-divider>
             <el-link type="primary" @click="scanCase(scope.row)">用例</el-link>
@@ -264,6 +264,9 @@ export default {
       console.log(`当前页: ${val}`);
       this.search.currentPage = val;
       this.searchClick();
+    },
+    doUpdate(row) {
+      this.$router.push({ path: "/tmp/commit?action=UPDATE&id=" + row.id });
     },
   },
   created() {

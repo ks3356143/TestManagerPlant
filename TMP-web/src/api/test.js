@@ -25,3 +25,21 @@ export function apiAppsIds(value) {
     method: 'get'
   })
 }
+
+//通过ID获取测试项内容以及app表内容
+export function apiTestInfo(id){
+  return request({
+    url:"/api/test/info",
+    method:"get",
+    params:{id}
+  })
+}
+
+//更新测试项接口
+export function apiUpdate(body){
+  return request({
+    url:"/api/test/update",
+    method:"post",
+    data:body
+  })
+}
