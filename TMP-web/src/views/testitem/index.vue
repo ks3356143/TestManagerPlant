@@ -92,6 +92,7 @@
         :header-cell-style="{ 'text-align': 'center' }"
         :cell-style="{ 'text-align': 'center' }"
         :data="testData"
+        v-loading="loading"
       >
         <el-table-column prop="appId" label="所属应用ID" />
         <el-table-column prop="title" label="测试项标题" />
@@ -108,7 +109,11 @@
             <el-divider direction="vertical"></el-divider>
             <el-link type="primary" @click="scanCase(scope.row)">用例</el-link>
             <el-divider direction="vertical"></el-divider>
-            <el-link type="primary" @click="viewItem(scope.row)">测试项表格</el-link>
+            <el-link type="primary" @click="showRequestInfo(scope.row)"
+              >测试项详情</el-link
+            >
+            <el-divider direction="vertical"></el-divider>
+            <el-link type="primary" @click="noviewItem(scope.row)">停用</el-link>
           </template>
         </el-table-column>
       </el-table>
@@ -126,12 +131,66 @@
         @current-change="handleCurrentChange"
       />
     </div>
+    <div>
+      <el-dialog :title="requestInfo.title" :visible.sync="requestInfoVisible">
+        <el-descriptions :column="2" border>
+          <el-descriptions-item label="测试项标题">{{
+            requestInfo.title
+          }}</el-descriptions-item>
+          <el-descriptions-item label="配置项/系统ID">{{
+            requestInfo.appId
+          }}</el-descriptions-item>
+          <el-descriptions-item label="测试人员">{{
+            requestInfo.tester
+          }}</el-descriptions-item>
+          <el-descriptions-item label="版本号">{{
+            requestInfo.version
+          }}</el-descriptions-item>
+          <el-descriptions-item label="测试类型">{{
+            formatInfoType(requestInfo.type)
+          }}</el-descriptions-item>
+          <el-descriptions-item label="测试项名称">{{
+            requestInfo.name
+          }}</el-descriptions-item>
+          <el-descriptions-item label="测试项标识">{{
+            requestInfo.ident
+          }}</el-descriptions-item>
+          <el-descriptions-item label="测试项描述" :span="2">{{
+            requestInfo.comm
+          }}</el-descriptions-item>
+          <el-descriptions-item label="测试方法" :span="2">{{
+            requestInfo.method
+          }}</el-descriptions-item>
+          <el-descriptions-item label="追踪文档名称">{{
+            requestInfo.refe
+          }}</el-descriptions-item>
+          <el-descriptions-item label="追踪章节号">{{
+            requestInfo.refhao
+          }}</el-descriptions-item>
+          <el-descriptions-item label="追踪章名称">{{
+            requestInfo.refname
+          }}</el-descriptions-item>
+          <el-descriptions-item label="执行优先级">{{
+            requestInfo.shun
+          }}</el-descriptions-item>
+          <el-descriptions-item label="测试内容" :span="2">{{
+            requestInfo.caseitem
+          }}</el-descriptions-item>
+          <el-descriptions-item label="测试通过准则" :span="2">{{
+            requestInfo.passitem
+          }}</el-descriptions-item>
+          <el-descriptions-item label="创建人">{{
+            requestInfo.createUser
+          }}</el-descriptions-item>
+        </el-descriptions>
+      </el-dialog>
+    </div>
   </div>
 </template>
 
 <script>
 import { apiAppsProduct } from "@/api/apps";
-import { apiTestSearch } from "@/api/test.js";
+import { apiTestSearch, changeStatus } from "@/api/test.js";
 import moment from "moment";
 
 export default {
@@ -179,6 +238,9 @@ export default {
         currentPage: 1,
         total: 0,
       },
+      loading: false,
+      requestInfoVisible: false,
+      requestInfo: {},
     };
   },
   methods: {
@@ -190,6 +252,7 @@ export default {
     },
     //按照条件查询，如果某个控件为空，则不会进行此字段查询
     searchClick() {
+      this.loading = true;
       const body = {
         pageSize: this.pageValues.pageSize,
         currentPage: this.pageValues.currentPage,
@@ -205,6 +268,9 @@ export default {
         this.pageValues.total = response.total;
         console.log(this.testData);
       });
+      setTimeout(() => {
+        this.loading = false;
+      }, 300);
     },
     formatDate(row, column) {
       const date = row[column.property];
@@ -251,6 +317,46 @@ export default {
           return "未知状态";
       }
     },
+    formatInfoType(type) {
+      switch (type) {
+        case 1:
+          return "功能测试";
+        case 2:
+          return "接口测试";
+        case 3:
+          return "性能测试";
+        case 4:
+          return "文档审查";
+        case 5:
+          return "代码审查";
+        case 6:
+          return "静态分析";
+        case 7:
+          return "余量测试";
+        case 8:
+          return "人机交互界面测试";
+        case 9:
+          return "安全测试";
+        case 10:
+          return "恢复测试";
+        case 11:
+          return "边界测试";
+        case 12:
+          return "强度测试";
+        case 13:
+          return "兼容测试";
+        case 14:
+          return "安装性测试";
+        case 15:
+          return "逻辑测试";
+        default:
+          return "未知状态";
+      }
+    },
+    showRequestInfo(row) {
+      this.requestInfo = row;
+      this.requestInfoVisible = true;
+    },
     //增加测试项跳转页面并给个action：ADD的参数
     doCommit() {
       this.$router.push({ name: "commit", params: { action: "ADD" } });
@@ -267,6 +373,34 @@ export default {
     },
     doUpdate(row) {
       this.$router.push({ path: "/tmp/commit?action=UPDATE&id=" + row.id });
+    },
+    noviewItem(row) {
+      console.log("点击了停用按钮");
+      const reqBody = {
+        id: row.id,
+        status: "stop",
+      };
+      this.$confirm("此操作将停用不显示, 是否继续?", "提示", {
+        confirmButtonText: "确定",
+        cancelButtonText: "取消",
+        type: "warning",
+      })
+        .then(() => {
+          changeStatus(reqBody).then((resp) => {
+            this.$message({
+              message: resp.message,
+              type: "success",
+            });
+            this.productList();
+            this.searchClick();
+          });
+        })
+        .catch(() => {
+          this.$message({
+            type: "info",
+            message: "已取消删除",
+          });
+        });
     },
   },
   created() {

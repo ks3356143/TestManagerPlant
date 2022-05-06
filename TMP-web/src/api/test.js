@@ -43,3 +43,12 @@ export function apiUpdate(body){
     data:body
   })
 }
+
+//testitem停用接口
+export function changeStatus(body){
+  return request({
+    url:"/api/test/change",
+    method:"post",
+    data:body
+  })
+}
