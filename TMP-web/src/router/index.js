@@ -75,7 +75,7 @@ export const constantRoutes = [
     children: [{
       path: 'upload',
       name: 'Upload',
-      component: () => import('@/views/demo/uploadDemo'),
+      component: () => import('@/views/upload/uploadDemo'),
       meta: { title: '文件上传Demo' }
     }]
   },
