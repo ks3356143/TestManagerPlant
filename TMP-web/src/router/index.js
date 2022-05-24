@@ -33,7 +33,7 @@ export const constantRoutes = [
     path:'/settings',
     component:Layout,
     redirect:"/settings",
-    meta:{title:"项目管理",icon:"el-icon-cpu"},
+    meta:{title:"项目管理和配置项系统",icon:"el-icon-cpu"},
     children:[{
       path:'product',
       name:'Product',
@@ -93,7 +93,6 @@ const createRouter = () => new Router({
 
 const router = createRouter()
 
-// Detail see: https://github.com/vuejs/vue-router/issues/1234#issuecomment-357941465
 export function resetRouter() {
   const newRouter = createRouter()
   router.matcher = newRouter.matcher // reset router
