@@ -154,10 +154,11 @@ def updateTestitem():
     body = json.loads(body)
     connection = pool.connection()
     resp_success = format.resp_format_success
+    print(body)
     #先将历史数据查询出来，用于回填？
     with connection.cursor() as cursor:
         sql = "SELECT A.id as appId,A.name as appName,T.id,T.title,T.tester,T.version,T.type,T.name,T.ident,T.comm,T.refe,T.refhao,T.refname,T.method, \
-            T.bind,T.stop,T.shun,T.caseitem,T.passitem,T.status,T.createUser FROM testitem as T,apps as A WHERE T.appId=A.id AND T.isDel=0\
+            T.bind,T.stop,T.shun,T.caseitem,T.passitem,T.createUser FROM testitem as T,apps as A WHERE T.appId=A.id AND T.isDel=0\
              AND T.id={}".format(body['id'])
         cursor.execute(sql)
         data = cursor.fetchall()

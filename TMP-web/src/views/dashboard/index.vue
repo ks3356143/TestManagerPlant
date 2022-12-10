@@ -20,8 +20,8 @@
           <el-switch
             v-model="stackedColumnMode"
             @change="changeBoardMode"
-            active-text="分组模式"
-            inactive-text="累积模式"
+            active-text="分组"
+            inactive-text="累积"
           >
           </el-switch>
         </el-form-item>
@@ -29,7 +29,7 @@
     </div>
     <el-card class="box-card">
       <div slot="header" class="clearfix">
-        <span>周需求分组量</span>
+        <span>默认显示2周内用例数量</span>
       </div>
       <div id="ColumnBoard" style="width: 95%; height: 360px" />
     </el-card>

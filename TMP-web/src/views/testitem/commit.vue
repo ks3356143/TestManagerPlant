@@ -440,7 +440,7 @@ export default {
               this.$router.push({ path: "/tmp/testitem", params: { needUp: true } });
             });
           } else {
-            apiUpdate(this.requestForm).then((res) => {
+            apiUpdate(this.requestForm).then((response) => {
               this.$notify({
                 title: "成功",
                 message: "修改成功",

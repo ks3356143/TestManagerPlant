@@ -17,11 +17,15 @@
           ></el-input>
         </el-form-item>
         <el-form-item label="项目类型" label-width="100px">
-          <el-input
-            v-model="product.type"
-            placeholder="请输入项目类型"
-            style="width: 90%"
-          ></el-input>
+          <el-select v-model="product.type" placeholder="请选择">
+            <el-option
+              v-for="item in proj_options"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
+            >
+            </el-option>
+          </el-select>
         </el-form-item>
         <el-form-item label="项目唯一代号" label-width="100px">
           <el-input
@@ -164,6 +168,25 @@ export default {
   // data() 数据\属性，固定return中配置
   data() {
     return {
+      //定义select选项
+      proj_options: [
+        {
+          value: "军方项目",
+          label: "军方项目",
+        },
+        {
+          value: "航天项目",
+          label: "航天项目",
+        },
+        {
+          value: "鉴定项目",
+          label: "鉴定项目",
+        },
+        {
+          value: "CNAS项目",
+          label: "CNAS项目",
+        },
+      ],
       //定义修改添加状态
       dialogProductStatus: "ADD",
       tableData: [],
@@ -172,7 +195,7 @@ export default {
       //定义项目参数
       product: {
         id: undefined,
-        type: undefined,
+        type: "军方项目",
         keyCode: undefined,
         title: undefined,
         tester: this.op_user,
@@ -252,6 +275,7 @@ export default {
       console.log("点击了修改项目信息按钮");
     },
     pUpdate() {
+      console.log(this.product);
       apiProductUpdate(this.product).then((res) => {
         this.$notify({
           title: "成功",
